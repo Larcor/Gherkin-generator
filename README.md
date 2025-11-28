@@ -117,26 +117,8 @@ generador-gherkin/
 - El archivo `.env` está excluido del control de versiones mediante `.gitignore`
 - Usa el archivo `.env.example` como plantilla (sin datos sensibles)
 
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Haz fork del proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit tus cambios (`git commit -m 'Agrega nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abre un Pull Request
-
 ## 📝 Notas
 
 - El modelo utilizado es **gemini-2.5-flash** de Google
 - Los escenarios se generan en **español** pero usando palabras clave de Gherkin en **inglés** (Given/When/Then)
 - La herramienta sigue las mejores prácticas de **BDD (Behavior-Driven Development)**
-
-## 📄 Licencia
-
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
-
----
-
-**Desarrollado con ❤️ usando Python, Streamlit y Gemini API**
