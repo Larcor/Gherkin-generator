@@ -13,18 +13,18 @@ Este proyecto utiliza **Streamlit** para proporcionar una interfaz web interacti
 - **Estilo declarativo BDD** (describe QUÉ hace el usuario, no CÓMO)
 - **Data-driven**: utiliza `Scenario Outline` para casos con múltiples variaciones
 - **Interfaz web** intuitiva y fácil de usar
-- Powered by **Google Gemini AI** (modelo gemini-2.5-flash)
+- **Google Gemini AI** (modelo gemini-2.5-flash)
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **Python 3.x**
+- **Python 3.11**
 - **Streamlit** - Framework para crear la interfaz web
 - **Google Generative AI (Gemini)** - IA para generación de escenarios
 - **python-dotenv** - Manejo de variables de entorno
 
 ## 📦 Requisitos Previos
 
-- Python 3.8 o superior
+- Python 3.11
 - Una API Key de Google AI Studio ([Obtener aquí](https://aistudio.google.com/app/apikey))
 
 ## 🚀 Instalación
@@ -33,7 +33,6 @@ Este proyecto utiliza **Streamlit** para proporcionar una interfaz web interacti
 
 ```bash
 git clone https://github.com/Larcor/Gherkin-generator.git
-cd Gherkin-generator
 ```
 
 ### 2. Crear un entorno virtual
@@ -51,7 +50,7 @@ source venv/bin/activate
 ### 3. Instalar las dependencias
 
 ```bash
-pip install streamlit google-generativeai python-dotenv
+pip install -r requirements.txt
 ```
 
 ### 4. Configurar la API Key
@@ -65,6 +64,58 @@ pip install streamlit google-generativeai python-dotenv
    ```
    GOOGLE_API_KEY=tu_api_key_aqui
    ```
+
+## 🏗️ Arquitectura y Patrones de Diseño
+
+Este proyecto ha sido refactorizado aplicando principios **SOLID** y patrones de diseño profesionales para garantizar mantenibilidad, escalabilidad y testabilidad.
+
+### Principios SOLID Aplicados
+
+| Principio | Implementación |
+|-----------|----------------|
+| **Single Responsibility** | Cada módulo tiene una única responsabilidad: `ConfigurationManager` maneja configuración, `GeminiService` maneja la API, etc. |
+| **Open/Closed** | Abierto a extensión: puedes agregar nuevos servicios de IA (`OpenAIService`, `ClaudeService`) sin modificar código existente |
+| **Liskov Substitution** | Cualquier implementación de `AIService` puede sustituir a otra sin romper el código |
+| **Interface Segregation** | Interfaces pequeñas y específicas (`AIService` solo define lo necesario) |
+| **Dependency Inversion** | El código depende de abstracciones (`AIService`), no de implementaciones concretas |
+
+### Patrones de Diseño
+
+- **Strategy Pattern**: `AIService` define la interfaz, `GeminiService` es una estrategia concreta
+- **Dependency Injection**: `app.py` inyecta dependencias a los componentes
+- **Builder Pattern**: `PromptBuilder` construye prompts complejos de manera fluida
+- **Separation of Concerns**: Capas separadas (config, services, ui, prompts)
+
+### Estructura Modular
+
+```
+generador-gherkin/
+├── app.py                          # Composition Root (orquestación)
+├── requirements.txt                # Gestión de dependencias
+├── .env / .env.example             # Configuración
+├── config/
+│   ├── __init__.py
+│   └── settings.py                 # ConfigurationManager (SRP)
+├── services/
+│   ├── __init__.py
+│   ├── ai_service.py               # Interfaz abstracta AIService (DIP)
+│   └── gemini_service.py           # Implementación Gemini (LSP)
+├── prompts/
+│   ├── __init__.py
+│   └── prompt_builder.py           # Constructor de prompts (Builder Pattern)
+└── ui/
+    ├── __init__.py
+    └── components.py               # Componentes de UI reutilizables (SRP)
+```
+
+### Beneficios de esta Arquitectura
+
+✅ **Mantenibilidad**: Código organizado y fácil de entender  
+✅ **Testabilidad**: Componentes aislados que pueden probarse independientemente  
+✅ **Escalabilidad**: Fácil agregar nuevos proveedores de IA o features  
+✅ **Reutilización**: Componentes modulares y reutilizables  
+✅ **Profesionalismo**: Sigue las mejores prácticas de la industria  
+
 
 ## ▶️ Ejecución
 

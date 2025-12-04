@@ -1,84 +1,55 @@
-import streamlit as st
-import google.generativeai as genai
-import os
-from dotenv import load_dotenv
+from config.settings import ConfigurationManager
+from services.gemini_service import GeminiService, GeminiServiceError
+from prompts.prompt_builder import PromptBuilder
+from ui.components import UIComponents, ValidationMessages
 
-# 1. Configuración inicial
-load_dotenv() # Carga la API Key del archivo .env
 
-# Configurar la API de Gemini
-api_key = os.getenv("GOOGLE_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-else:
-    st.error("No se encontró la API Key. Asegúrate de crear el archivo .env")
-
-# 2. Configuración de la Interfaz (Streamlit)
-st.set_page_config(page_title="Text-to-Gherkin Generator", page_icon="🤖")
-
-st.title("🤖 Generador de Casos de Prueba (Text-to-Gherkin)")
-st.markdown("""
-    Pega tu **Historia de Usuario** abajo y la IA generará los escenarios 
-    de prueba en formato **Gherkin** listos para automatizar.
-""")
-
-# 3. Área de entrada del usuario
-user_story = st.text_area(
-    "Historia de Usuario:",
-    placeholder="Ej: Como usuario registrado, quiero recuperar mi contraseña mediante email para volver a acceder a mi cuenta...",
-    height=150
-)
-
-# 4. Lógica del Botón y el Prompt
-if st.button("Generar Escenarios Gherkin ✨"):
-    if not user_story:
-        st.warning("Por favor, ingresa una historia de usuario primero.")
-    elif not api_key:
-        st.error("Falta configurar la API Key.")
-    else:
-        with st.spinner("Un QA Senior está analizando tu historia..."):
-            try:
-                model = genai.GenerativeModel('gemini-2.5-flash') # Modelo de gemini
+def main():    
+    config_manager = ConfigurationManager()
+    settings = config_manager.settings
+    
+    UIComponents.configure_page(settings)
+    
+    is_valid, error_message = config_manager.validate()
+    if not is_valid:
+        UIComponents.show_error(error_message)
+    
+    ai_service = GeminiService(
+        api_key=settings.google_api_key,
+        model_name=settings.model_name
+    )
+    
+    prompt_template = PromptBuilder().for_gherkin_generation().build()
+    
+    UIComponents.render_header()
+    user_story = UIComponents.render_user_story_input()
+    
+    if UIComponents.render_generate_button():
+        if not user_story:
+            UIComponents.show_warning(ValidationMessages.EMPTY_USER_STORY)
+            return
+        
+        if not is_valid:
+            UIComponents.show_error(ValidationMessages.API_KEY_MISSING)
+            return
+        
+        try:
+            with UIComponents.show_spinner(ValidationMessages.LOADING_MESSAGE):
+                gherkin_scenarios = ai_service.generate_gherkin_scenarios(
+                    user_story=user_story,
+                    prompt_template=prompt_template
+                )
+                UIComponents.render_result(gherkin_scenarios)
                 
-                # PROMPT
-                system_prompt = f"""
-                Actúa como un Lead QA Automation Engineer experto en metodologías BDD.
+        except GeminiServiceError as e:
+            error_msg = ValidationMessages.GENERATION_ERROR.format(error=str(e))
+            UIComponents.show_error(error_msg)
+        except Exception as e:
+            error_msg = ValidationMessages.GENERATION_ERROR.format(error=str(e))
+            UIComponents.show_error(error_msg)
+    
+    UIComponents.render_footer()
 
-                Tu tarea es convertir la siguiente Historia de Usuario o Caso de Prueba manual en escenarios Gherkin de alta calidad.
 
-                OBJETIVO:
-                Generar archivos .feature que sirvan como documentación viva del negocio, legibles por stakeholders no técnicos.
-
-                REGLAS ESTRICTAS DE ESTILO (CRÍTICO):
-                1.  **Estilo Declarativo:** Describe QUÉ hace el usuario, no CÓMO lo hace.
-                    * PROHIBIDO: "Hacer clic en el botón X", "Escribir 'admin' en el campo #user".
-                    * PERMITIDO: "Cuando el usuario envía sus credenciales", "Cuando confirma la transacción".
-                2.  **Tercera Persona:** Escribe siempre como "El usuario" o "El cliente", nunca como "Yo".
-                3.  **Atomicidad:** Cada escenario debe ser independiente.
-                4.  **Reutilización:** Si hay precondiciones repetidas, extráelas a un bloque `Background`.
-                5.  **Data Driven:** Si hay múltiples variaciones de datos (ej: varios casos de error), DEBES usar `Scenario Outline` con una tabla de `Examples` en lugar de repetir escenarios.
-
-                REQUERIMIENTOS DE SALIDA:
-                1.  Genera 1 `Scenario` para el Happy Path.
-                2.  Genera escenarios negativos o bordes (usa `Scenario Outline` si aplica).
-                3.  Usa palabras clave en Inglés (Given/When/Then) pero el contenido en Español (o el idioma del input).
-                4.  No incluyas explicaciones, solo el bloque de código Gherkin.
-
-                Historia de Usuario:
-                "{user_story}"
-                """
-                
-                response = model.generate_content(system_prompt)
-                
-                # 5. Mostrar resultado
-                st.subheader("📝 Escenarios Generados:")
-                st.code(response.text, language="gherkin")
-                
-                st.success("¡Generación completada!")
-                
-            except Exception as e:
-                st.error(f"Ocurrió un error al conectar con Gemini: {e}")
-
-# Footer
-st.markdown("---")
-st.caption("Herramienta creada con Python, Streamlit y Gemini API.")
+if __name__ == "__main__":
+    main()
